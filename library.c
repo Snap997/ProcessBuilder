@@ -12,31 +12,29 @@ Process createProcess(char *path, char *args[]){
     if(path == NULL){
         return NULL;
     }
-    Process process = malloc(sizeof(Process));
-    if(process != NULL){
-        char processCommand[MAX_SIZE];
-        strncpy(processCommand, path, MAX_SIZE-1);
-        process->command = processCommand;
-        process->pid = -1; // the process doesn't have a pid because it's not started
-        char *realArgs[MAX_SIZE]; // we do this to add the name of the program on top of the arguments
-        realArgs[0] = process->command; // args needs to start with the process name
-        int i =0;
-        if(args != NULL){
-            //printf("%s\n", process->command);
-            for(i; args[i] != NULL && i<MAX_SIZE-1; i++){
-                realArgs[i+1] = strdup(args[i]);
-            }
-        }
-        realArgs[i+1] = NULL; //args needs to finish with NULL
-        process->args = realArgs;
-        process->inputStream = STDIN_FILENO;
-        process->outputStream = STDOUT_FILENO;
-        return process;
-    }else{
-        free(process);
+    Process process = malloc(sizeof(*process));
+    if(process == NULL) {
+        return NULL;
     }
 
-    return NULL;
+    char processCommand[MAX_SIZE];
+    strncpy(processCommand, path, MAX_SIZE-1);
+    process->command = processCommand;
+    process->pid = 0; // the process doesn't have a pid because it's not started
+    char *realArgs[MAX_SIZE]; // we do this to add the name of the program on top of the arguments
+    realArgs[0] = process->command; // args needs to start with the process name
+    int i =0;
+    if(args != NULL){
+        //printf("%s\n", process->command);
+        for(i; args[i] != NULL && i<MAX_SIZE-1; i++){
+            realArgs[i+1] = strdup(args[i]);
+        }
+    }
+    realArgs[i+1] = NULL; //args needs to finish with NULL
+    process->args = realArgs;
+    process->inputStream = STDIN_FILENO;
+    process->outputStream = STDOUT_FILENO;
+    return process;
 }
 
 int startProcess(Process process) {
@@ -45,7 +43,7 @@ int startProcess(Process process) {
         return -1;
     }
 
-    if (process->pid != -1) {
+    if (process->pid != 0 && process->pid != -1) {
         fprintf(stderr, "Error: Process already started, pid: %d\n", process->pid);
         return -1;
     }
@@ -58,15 +56,15 @@ int startProcess(Process process) {
 
     else if (pid == 0) { // Child process
         if (dup2(process->inputStream, STDIN_FILENO) == -1 || dup2(process->outputStream, STDOUT_FILENO) == -1) {
-            perror("Error duplicating file descriptors");
+            fprintf(stderr, "failed to dup\n");
+            exit(1);
+        }
+        //fprintf(stdout, "Ready to start\n, cmd: %s\n, args[0]: %s\n", process->command, process->args[0]);
+        if (execvp(process->command, process->args) == -1) {
+            fprintf(stderr, "failed to start the process, command: %s\n", process->command);
             exit(1);
         }
 
-        //printf("Ready to start\n, cmd: %s\n, args[0]: %s\n", process->command, process->args[0]);
-        if (execvp(process->command, process->args) == -1) {
-            perror("Error starting process");
-            exit(1);
-        }
     } else { // Parent process
         process->pid = pid;
         return process->pid;
@@ -94,8 +92,9 @@ size_t sendToProcess(Process target, void *message, size_t nBytes){
 }
 
 void deallocateProcess(Process process){
-    if(process != NULL) {
+    if(process != NULL && process->pid != -1) {
         //free(process->args);
+        process->pid = -1;
         free(process);
     }
 }
@@ -104,6 +103,7 @@ int killProcess(Process target, short signal){
     if(target != NULL){
         int exitStatus = kill(target->pid, signal);
         deallocateProcess(target);
+        return exitStatus;
     }
     return -1;
 
