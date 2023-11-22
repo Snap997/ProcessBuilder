@@ -115,12 +115,3 @@ int waitForTermination(Process target){
     deallocateProcess(target);
     return WEXITSTATUS(status);
 }
-
-int main(void){
-    char *arr[10] = {"/bin/", "-al", NULL};
-    Process process = createProcess("ls", arr);
-    startProcess(process);
-    waitForTermination(process);
-
-    return 0;
-}
