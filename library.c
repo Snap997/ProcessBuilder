@@ -5,7 +5,7 @@
 #include <signal.h>
 #include <wait.h>
 #include <stdlib.h>
-
+#include <errno.h>
 #define MAX_SIZE 1024
 
 Process createProcess(char *path, char *args[]){
@@ -56,12 +56,12 @@ int startProcess(Process process) {
 
     else if (pid == 0) { // Child process
         if (dup2(process->inputStream, STDIN_FILENO) == -1 || dup2(process->outputStream, STDOUT_FILENO) == -1) {
-            fprintf(stderr, "failed to dup\n");
+            fprintf(stderr, "failed to dup\n errno: %s",  strerror(errno));
             exit(1);
         }
         //fprintf(stdout, "Ready to start\n, cmd: %s\n, args[0]: %s\n", process->command, process->args[0]);
         if (execvp(process->command, process->args) == -1) {
-            fprintf(stderr, "failed to start the process, command: %s\n", process->command);
+            fprintf(stderr, "failed to start the process, command: %s, errno: %s\n", process->command, strerror(errno));
             exit(1);
         }
 
