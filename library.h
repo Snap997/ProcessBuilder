@@ -14,7 +14,7 @@ typedef struct process {
 /**
  * Create the Process struct and use the function startProcess to start it.
  * @param path The relative path of the process.
- * @param args Arguments of the program (NULL-terminated, doesn't need to start with processName).
+ * @param args Arguments of the program, null if there is no args (NULL-terminated, doesn't need to start with processName).
  * @return A Process struct pointer in case of success, or NULL in case of an error.
  */
 Process createProcess(char *path, char **args);
