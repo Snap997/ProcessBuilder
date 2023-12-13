@@ -99,14 +99,18 @@ void deallocateProcess(Process process){
     }
 }
 
-int killProcess(Process target, short signal){
+int signalProcess(Process target, int signal){
+    return kill(target->pid, signal);
+}
+
+
+int killProcess(Process target){
     if(target != NULL){
-        int exitStatus = kill(target->pid, signal);
+        int exitStatus = kill(target->pid, 9);
         deallocateProcess(target);
         return exitStatus;
     }
     return -1;
-
 }
 
 int waitForTermination(Process target){
@@ -115,3 +119,5 @@ int waitForTermination(Process target){
     deallocateProcess(target);
     return WEXITSTATUS(status);
 }
+
+

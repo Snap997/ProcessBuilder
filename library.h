@@ -64,12 +64,20 @@ void setOutputStream(Process process, int newFd);
 size_t sendToProcess(Process target, void *message, size_t nBytes);
 
 /**
- * Kill the target process with a signal.
+ * Send a signal to a process, a kill signal
+ * @param target The target process destination of the signal
+ * @param signal The signal to send.
+ * @return the status
+ */
+int signalProcess(Process target, int signal);
+
+/**
+ * Kill the target process with a signal 9.
  * @param target The target process to kill.
  * @param signal The signal to use for killing.
  * @return The killing exit status.
  */
-int killProcess(Process target, short signal);
+int killProcess(Process target);
 
 /**
  * Await the termination of the process.
@@ -82,11 +90,7 @@ int waitForTermination(Process process);
 
 Process cloneProcess(Process father);
 
-int waitTermination(Process target);
-
 char getStatus(Process pid);
-
-int pidExist(Process pid);
 
 int setCwd(Process pid, char *newCwd);
 
@@ -95,8 +99,6 @@ char *getCwd(Process pid);
 int getErrorPipe(Process pid);
 
 int setErrorPipe(Process pid, int newFd);
-
-void inheritIO(Process p);
 
 char *getName(Process pid);
 
