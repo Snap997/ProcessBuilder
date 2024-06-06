@@ -8,32 +8,52 @@
 #include <errno.h>
 #define MAX_SIZE 1024
 
-Process createProcess(char *path, char *args[]){
-    if(path == NULL){
+Process createProcess(char *path, char *args[])
+{
+    int i = 0, size = 0;
+    char **realArgs; // We use this to add the name of the program on top of the arguments
+    Process process;
+
+    // Check if the provided path is NULL
+    if (path == NULL)
         return NULL;
-    }
-    Process process = malloc(sizeof(*process));
-    if(process == NULL) {
+
+    // Allocate memory for the Process structure
+    process = malloc(sizeof(*process));
+    if (process == NULL)
+        return NULL;
+
+    // Allocate memory for the command and copy the path into it
+    process->command = malloc(strlen(path) + 1);
+    strncpy(process->command, path, strlen(path) + 1);
+    process->pid = 0; // The process doesn't have a PID because it's not started
+
+    // Calculate the size of the arguments array
+    while (args[size] != NULL)
+        size++;
+
+    // Allocate memory for realArgs (size + 2 for the program name and NULL terminator)
+    realArgs = calloc(size + 2, sizeof(char *));
+    if (realArgs == NULL) {
+        free(process->command);
+        free(process);
         return NULL;
     }
 
-    char processCommand[MAX_SIZE];
-    strncpy(processCommand, path, MAX_SIZE-1);
-    process->command = processCommand;
-    process->pid = 0; // the process doesn't have a pid because it's not started
-    char *realArgs[MAX_SIZE]; // we do this to add the name of the program on top of the arguments
-    realArgs[0] = process->command; // args needs to start with the process name
-    int i =0;
-    if(args != NULL){
-        //printf("%s\n", process->command);
-        for(i; args[i] != NULL && i<MAX_SIZE-1; i++){
-            realArgs[i+1] = strdup(args[i]);
+    // Populate realArgs with the provided arguments
+    if (args != NULL) {
+        for (i = 0; args[i] != NULL && i < size; i++) {
+            realArgs[i + 1] = strdup(args[i]);
         }
     }
-    realArgs[i+1] = NULL; //args needs to finish with NULL
+
+    // Set the first argument to the command and terminate the array with NULL
+    realArgs[0] = process->command; // Args need to start with the process name
+    realArgs[i + 1] = NULL;         // Args need to finish with NULL
     process->args = realArgs;
     process->inputStream = STDIN_FILENO;
     process->outputStream = STDOUT_FILENO;
+
     return process;
 }
 
@@ -91,9 +111,23 @@ size_t sendToProcess(Process target, void *message, size_t nBytes){
     return write(getInputStream(target), message, nBytes);
 }
 
-void deallocateProcess(Process process){
-    if(process != NULL && process->pid != -1) {
-        //free(process->args);
+void deallocateProcess(Process process)
+{
+    int index = 0;
+
+    if (process != NULL && process->pid != -1)
+    {
+        /**
+         * After this, we can't free process->command because.
+         * it is included in process->args[0].
+         */
+        while (process->args[index] != NULL)
+        {
+            free(process->args[index]);
+            index++;
+        }
+        free(process->args);
+
         process->pid = -1;
         free(process);
     }
