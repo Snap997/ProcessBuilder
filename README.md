@@ -20,3 +20,11 @@ int main(){
     waitForTermination(process);
 }
 ```
+
+### How to build
+
+To compile and create the dynamic library, you must have CMake installed. Then, you need to create the build output folder, generate the Makefile, and compile.
+
+```sh
+mkdir build && cd build && cmake .. && make
+```
